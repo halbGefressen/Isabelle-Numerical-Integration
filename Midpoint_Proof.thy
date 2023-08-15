@@ -78,7 +78,7 @@ theorem midpoint_approx_error:
 proof -
     let ?mid = "a + (b-a)/2"
     have [arith]: "a \<le> ?mid" and [arith]: "?mid \<le> b"
-      by simp (smt (z3) a_le_b field_sum_of_halves)
+      by (auto simp: algebra_simps divide_simps)
     have lower: "(\<integral>x\<in>{a..?mid}. f x \<partial>lborel)
         = (b-a)/2 * f ?mid - ((b-a)/2) * ((b-a)/2) / 2 * f' ?mid + (\<integral> x\<in>{a..?mid}. ((x - a) * (x - a) / 2 *f'' x) \<partial>lborel)"
         by (subst double_integration_by_parts[of f f' a ?mid f'' k a],
@@ -96,11 +96,11 @@ proof -
         also have "... \<le> \<integral>x\<in>{a..?mid}. ((x - a) * (x - a) / 2 * k) \<partial>lborel"
           apply (intro set_integral_mono) using continuous_on_subset[OF cont_f'']
           by (auto 1 0 intro!: continuous_intros borel_integrable_atLeastAtMost' cong: abs_mult
-            simp: f''_bound mult_left_mono)
+            simp: f''_bound mult_left_mono) (*proof takes ages with default auto parameters*)
         also have "... = k/2 * (\<integral>x\<in>{a..?mid}. ((x - a)^2) \<partial>lborel)" by (simp add: power2_eq_square)
         also have "... = k * ((b-a)/2)^3 / 6" unfolding set_lebesgue_integral_def apply (subst integral_FTC_Icc)
           using DERIV_mult[OF DERIV_const [of "1/3"] DERIV_power[OF DERIV_diff[OF DERIV_ident DERIV_const[of a]], of 3]]
-            by (auto intro!: continuous_intros  borel_integrable_atLeastAtMost'
+            by (auto 2 0 intro!: continuous_intros  borel_integrable_atLeastAtMost'
               cong: has_real_derivative_iff_has_vector_derivative[symmetric])
         finally have "\<bar>\<integral>x\<in>{a..?mid}. ((x - a) * (x - a) / 2 * f'' x) \<partial>lborel\<bar> \<le> k * ((b-a))^3/48" by (simp add: power_divide)
     }

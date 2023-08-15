@@ -11,7 +11,8 @@ lemma real_set_integral_combine:
     and \<open>set_integrable lborel {c..b} f\<close>
 proof goal_cases
   show setintegr1: \<open>set_integrable lborel {a..c} f\<close>
-   and setintegr2: \<open>set_integrable lborel {c..b} f\<close> using assms set_integrable_subset by fastforce+
+   and setintegr2: \<open>set_integrable lborel {c..b} f\<close>
+    using assms set_integrable_subset by fastforce+
   then show \<open>(\<integral>x\<in>{a..c}. f x \<partial>lborel) + (\<integral>x\<in>{c..b}. f x \<partial>lborel) = \<integral>x\<in>{a..b}. f x \<partial>lborel\<close>
     using assms AE_lborel_singleton[of c] by (auto intro!: set_integral_Un_AE[symmetric]
       cong: ivl_disj_un_two_touch(4)[OF assms(2) assms(3), symmetric])
@@ -65,8 +66,9 @@ proof -
   have "(n * H) ^ m / (n ^ (m-1)) + H ^ m = n * H^m + H^m" by simp
   also have "... = Suc n * H^m" by (simp add: distrib_left mult.commute)
   also have "... = Suc n * (Suc n)^(m-1) * H^m / (Suc n)^(m-1)" by (auto simp: algebra_simps divide_simps)
-  also have "... = (Suc n * H)^m / ((Suc n)^(m-1))"
-    by (metis assms(2) of_nat_power power_commutes power_minus_mult power_mult_distrib)
+  also have "... = (Suc n)^m * H^m / (Suc n)^(m-1)"
+    using assms(2) by (simp add: nat_neq_iff power_eq_if)
+  also have "... = (Suc n * H)^m / ((Suc n)^(m-1))" by (simp add: power_mult_distrib)
   finally have "(n * H) ^ m / (n ^ (m-1)) + H ^ m = h ^ m / (Suc n ^ (m-1))"
     unfolding H_def by simp
   with H_def show ?thesis by blast

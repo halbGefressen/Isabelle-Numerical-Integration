@@ -33,8 +33,7 @@ next
   }
   note cong0 = this
   have cong1: "a + (Suc n * ?Hs) = b" by simp
-  then have cong2: "a + n * ?Hs = b - ?Hs"
-    by (smt (verit) Suc.hyps \<open>(b - ?Hs - a) / real n = ?Hs\<close> mult.commute nat_less_le nonzero_eq_divide_eq of_nat_0_eq_iff)
+  then have cong2: "a + n * ?Hs = b - ?Hs" by (auto simp: algebra_simps divide_simps)
   have "\<And>x::real. Suc n * x = n * x + x" by (simp add: distrib_left mult.commute)
   note cong3 = this[of ?Hs]
 
