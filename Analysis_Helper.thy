@@ -46,4 +46,29 @@ lemma set_integral_abs_bound[arith]:
     shows "\<bar>\<integral>x\<in>{a..b}. f x \<partial>lborel\<bar> \<le> \<integral>x\<in>{a..b}. \<bar>f x\<bar> \<partial>lborel"
 unfolding set_lebesgue_integral_def by (simp cong: abs_mult_pos')
 
+(**
+   (n * H) ^ m / (n ^ (m-1)) + H ^ m = (b - a) ^ m / (Suc n ^ (m-1))
+ **
+ **)
+
+lemma error_cong:
+  fixes h :: real
+    and n m :: nat
+    assumes [arith]:"(h/(Suc n)) \<ge> 0" and [arith]:"m > 0" and [arith]: "h \<ge> 0" and [arith]:"n > 0"
+  shows "(n * (h/(Suc n))) ^ m / (n ^ (m-1)) + (h/(Suc n)) ^ m = h ^ m / (Suc n ^ (m-1))"
+proof -
+  define H where "H = h/(Suc n)"
+  have [cong]:"(n * H) ^ m / (n ^ (m-1)) = n * H^m"
+    by (subst of_nat_power, subst power_mult_distrib,
+      simp add: algebra_simps divide_simps,
+      simp add: power_eq_if)
+  have "(n * H) ^ m / (n ^ (m-1)) + H ^ m = n * H^m + H^m" by simp
+  also have "... = Suc n * H^m" by (simp add: distrib_left mult.commute)
+  also have "... = Suc n * (Suc n)^(m-1) * H^m / (Suc n)^(m-1)" by (auto simp: algebra_simps divide_simps)
+  also have "... = (Suc n * H)^m / ((Suc n)^(m-1))"
+    by (metis assms(2) of_nat_power power_commutes power_minus_mult power_mult_distrib)
+  finally have "(n * H) ^ m / (n ^ (m-1)) + H ^ m = h ^ m / (Suc n ^ (m-1))"
+    unfolding H_def by simp
+  with H_def show ?thesis by blast
+qed
 end

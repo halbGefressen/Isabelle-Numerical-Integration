@@ -408,8 +408,8 @@ proof (insert assms, induction N arbitrary: a b rule: nat_induct_non_zero)
     have cong1: "a + Suc n * H = b" unfolding H_def by simp
     then have cong2: "a + n * H = b - H" by (auto simp: algebra_simps)
     have [arith]:"H \<ge> 0" unfolding H_def using a_le_b by (simp add: Suc.prems(7))
-    then have a_le_mid:"a \<le> b - H" using cong2 by (auto simp: algebra_simps)
-    have mid_le_b: "b - H \<le> b" by linarith
+    then have a_le_mid[arith]:"a \<le> b - H" using cong2 by (auto simp: algebra_simps)
+    have mid_le_b[arith]: "b - H \<le> b" by linarith
     have subset1: "{a..b - H} \<subseteq> {a..b}" using mid_le_b by simp
     have subset2: "{b-H..b} \<subseteq> {a..b}" using a_le_mid by simp
 
@@ -429,35 +429,33 @@ proof (insert assms, induction N arbitrary: a b rule: nat_induct_non_zero)
     {
       have *: "b - H - a = n * H" using cong2 by linarith
       have "\<bar>(LBINT x:{a..b - H}. f x) - simpson_rule_comp f a (b - H) n\<bar> \<le> k * (b - H - a)^5 /(90*2^5*n ^4)"
-        apply (rule Suc.IH[of a "b - H"])
-          using DERIV_subset[OF _ subset1] continuous_on_subset[OF _ subset1]
-            Suc.prems a_le_mid mid_le_b by auto
+        using subset1 Suc.prems(6) by (subst Suc.IH[
+          OF DERIV_subset[OF Suc.prems(1)] DERIV_subset[OF Suc.prems(2)]
+             DERIV_subset[OF Suc.prems(3)] DERIV_subset[OF Suc.prems(4)]
+             continuous_on_subset[OF Suc.prems(5)] _ a_le_mid], auto)
       then have "\<bar>(LBINT x:{a..b - H}. f x) - simpson_rule_comp f a (b - H) n\<bar> \<le> ?e1" using * by simp
     }
         note e1 = this
     {
-      have "\<bar>(LBINT x:{b - H..b}. f x) - simpson_rule f (b-H) b \<bar> \<le>
-        k * (b - (b - H)) ^ 5 / (90*2^5)"
-        apply (subst simpson_approx_error[of f f\<^sub>1 "b-H" b f\<^sub>2 f\<^sub>3 f\<^sub>4 k])
-          using DERIV_subset[OF _ subset2] continuous_on_subset[OF _ subset2]
-            Suc.prems a_le_mid mid_le_b by auto
+      have "\<bar>(LBINT x:{b - H..b}. f x) - simpson_rule f (b-H) b \<bar> \<le> k * (b - (b - H)) ^ 5 / (90*2^5)"
+        using subset2 Suc.prems(6) by (subst simpson_approx_error[
+             OF DERIV_subset[OF Suc.prems(1)] DERIV_subset[OF Suc.prems(2)]
+                DERIV_subset[OF Suc.prems(3)] DERIV_subset[OF Suc.prems(4)]
+                continuous_on_subset[OF Suc.prems(5)] _ mid_le_b], auto)
       then have "\<bar>(LBINT x:{b - H..b}. f x) - simpson_rule f (b-H) b \<bar> \<le> ?e2" by argo
     }
         note e2 = this
-    have e1_rw: "(n * H) ^ 5 / (n ^ 4) = n * (H)^5"
-      by (subst of_nat_power, subst power_mult_distrib, auto simp: divide_simps, algebra)
     {
-        have "?e1 + ?e2 = k / (90*2^5) * ((n * H) ^ 5 / (n ^ 4) + (H ^ 5))"
+        have "?e1 + ?e2 = (k / (90*2^5)) * ((n * H) ^ 5 / (n ^ (5-1)) + (H ^ 5))"
           by (auto simp: algebra_simps)
-        also have "... = k/(90*2^5) * Suc n * H^5" using e1_rw by (auto simp: algebra_simps)
-        also have "... = k/(90*2^5) * Suc n * (Suc n)^4 * H^5 / (Suc n)^4" by simp
-        also have "... = k * (Suc n * H)^5 / (90 * 2^5 * (Suc n)^4)" by (auto simp: algebra_simps, algebra)
+        also have "... = (k / (90 * 2^5)) * (b-a)^5 / ((Suc n)^(5-1))"
+          using error_cong[of "b-a" n 5, OF _ _ _ \<open>0 < n\<close>] H_def \<open>0 \<le> H\<close> \<open>a \<le> b\<close> by auto
         finally have "?e1 + ?e2 = k * (b-a)^5 / (90 * 2^5 * (Suc n)^4)" unfolding H_def by simp
     }
       note combined_error = this
+    from real_set_integral_combine[OF borel_integrable_atLeastAtMost'[OF DERIV_continuous_on[OF Suc.prems(1)]]]
     have "(LBINT x:{a..b}. f x) = (LBINT x:{a..b - H}. f x) + (LBINT x:{b - H..b}. f x)"
-      apply (subst real_set_integral_combine[OF borel_integrable_atLeastAtMost'[OF DERIV_continuous_on[OF Suc.prems(1)]]])
-      apply (subst cong2[symmetric]) using \<open>0 \<le> H\<close> by (auto simp: Suc.prems(7))
+      by simp
     then show ?case using e1 e2 simpson_add combined_error by argo
 qed (insert simpson_approx_error, fastforce)
 
