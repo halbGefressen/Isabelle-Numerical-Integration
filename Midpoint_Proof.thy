@@ -10,31 +10,26 @@ definition midpoint_rule_comp :: "(real \<Rightarrow> real) \<Rightarrow> real \
   in h * (\<Sum>k\<leftarrow>[0..<n]. f (a + (2 * k + 1) * h / 2)))\<close>
 
 lemma [cong]:"midpoint_rule_comp f a b 1 = midpoint_rule f a b"
-proof -
-    have [cong]:"a + (b-a)/2 = (a + b)/2" by argo
-    then show ?thesis unfolding midpoint_rule_def midpoint_rule_comp_def by simp
-qed
-
+  unfolding midpoint_rule_def midpoint_rule_comp_def
+  by (auto simp: algebra_simps divide_simps)
 
 lemma midpoint_IH:
   assumes "n > 0" shows
   "midpoint_rule_comp f a b (Suc n) =
     midpoint_rule_comp f a (b - (b - a)/Suc n) n + midpoint_rule f (b - (b - a)/Suc n) b"
 proof -
-  have *: "midpoint_rule f (b - (b - a)/Suc n) b = (b - a)/(Suc n) * f (a + (2 * n + 1) * (b-a)/(Suc n)/2)"
-    unfolding midpoint_rule_def by (auto simp: algebra_simps divide_simps)
-
-  let ?rest = "(b - a)/(Suc n) * f (a + (2 * real n + 1) * (b - a)/(Suc n)/2)"
-  have "((b-a) / Suc n) = (n * (b-a) / Suc n) / n" using \<open>n>0\<close> by simp
-  also have "... = (Suc n * (b-a) - (b-a)) / Suc n / n" by (simp add: algebra_simps)
-  also have "... = (b - ((b-a) / Suc n) - a) / n" by (simp add: diff_divide_distrib)
-  finally have **: "(b - ((b-a) / Suc n) - a) / n = ((b-a) / Suc n) " ..
-  have "midpoint_rule_comp f a b (Suc n) = (let h = (b - a)/(Suc n)
+  define H where "H = (b-a)/Suc n"
+  let ?rest = "H * f (a + (2 * real n + 1) * H/2)"
+  have *: "midpoint_rule f (b - (b - a)/Suc n) b = H * f (a + (2 * n + 1) * H/2)"
+    unfolding midpoint_rule_def H_def by (auto simp: algebra_simps divide_simps)
+  have "H = (n * H) / n" using \<open>n>0\<close> by simp
+  then have **:"... = (b - H - a) / n" unfolding H_def by (simp add: algebra_simps divide_simps)
+  have "midpoint_rule_comp f a b (Suc n) = (let h = H
     in h * (\<Sum>k\<leftarrow>[0..<n]. f (a + (2 * k + 1) * h/2)) + h * f (a + (2 * real n + 1) * h/2))"
-    unfolding midpoint_rule_comp_def by (simp add: algebra_simps)
-  also have "... = (let h = (b - ((b-a) / Suc n) - a) / n
-    in h * (\<Sum>k\<leftarrow>[0..<n]. f (a + (2 * k + 1) * h/2))) + ?rest" by (simp cong: **)
-  finally show ?thesis unfolding midpoint_rule_comp_def * by (simp add: algebra_simps)
+    unfolding midpoint_rule_comp_def H_def by (simp add: algebra_simps)
+  also have "... = (let h = (b - H - a) / n
+    in h * (\<Sum>k\<leftarrow>[0..<n]. f (a + (2 * k + 1) * h/2))) + ?rest" using **[symmetric] by simp
+  finally show ?thesis unfolding midpoint_rule_comp_def * H_def by (simp add: algebra_simps)
 qed
 
 
@@ -48,22 +43,21 @@ lemma double_integration_by_parts:
       and a_le_b[arith]: "a \<le> b"
     shows "\<And>c. (\<integral>x\<in>{a..b}. f x \<partial>lborel)
         = (b - c) * f b - (a - c) * f a
-          - ((b - c) * (b - c) / 2 * f' b - (a - c) * (a - c) / 2 * f' a)
-          + (\<integral> x\<in>{a..b}. ((x - c) * (x - c) / 2 *f'' x) \<partial>lborel)"
+          - ((b - c)^2 / 2 * f' b - (a - c)^2 / 2 * f' a)
+          + (\<integral>x\<in>{a..b}. ((x - c)^2 / 2 *f'' x) \<partial>lborel)"
 proof - (*front part*)
       fix c::real
       have [cong]:"\<And>x. (4 * x - 4 * c) / 4 = (x-c)" by simp
-      have deriv'_F:"(\<And>x. ((λx. (x - c) * (x-c) / 2) has_real_derivative (λx. x - c) x) (at x within {a..b}))"
-        using DERIV_divide[OF DERIV_mult[OF DERIV_diff[OF DERIV_ident DERIV_const[of c]]
-                                            DERIV_diff[OF DERIV_ident DERIV_const[of c]]]
-                              DERIV_const[of "2"]] by simp
+      have deriv'_F:"(\<And>x. ((λx. (x - c)^2 / 2) has_real_derivative (λx. x - c) x) (at x within {a..b}))"
+        thm DERIV_divide[OF DERIV_power[OF DERIV_diff[OF DERIV_ident DERIV_const[of c]], of 2] DERIV_const[of 2]]
+        using DERIV_divide[OF DERIV_power[OF DERIV_diff[OF DERIV_ident DERIV_const[of c]], of 2] DERIV_const[of 2]] by simp
       have part1: "(\<integral>x\<in>{a..b}. f x \<partial>lborel) = (b - c) * f b - (a - c) * f a - (\<integral>x\<in>{a..b}. ((x - c) * f' x) \<partial>lborel)"
         using set_integral_by_parts[OF a_le_b continuous_on_const DERIV_continuous_on[OF deriv2]
           DERIV_diff[OF DERIV_ident DERIV_const[of c]] deriv1] by simp
       with set_integral_by_parts[OF a_le_b continuous_on_diff[OF continuous_on_id continuous_on_const] cont_f'' deriv'_F deriv2]
       show "(\<integral>x\<in>{a..b}. f x \<partial>lborel) = (b - c) * f b - (a - c) * f a
-          - ((b - c) * (b - c) / 2 * f' b - (a - c) * (a - c) / 2 * f' a)
-          + (\<integral> x\<in>{a..b}. ((x - c) * (x - c) / 2 *f'' x) \<partial>lborel)" apply (subst part1) by argo
+          - ((b - c)^2 / 2 * f' b - (a - c)^2 / 2 * f' a)
+          + (\<integral> x\<in>{a..b}. ((x - c)^2 / 2 *f'' x) \<partial>lborel)" by (subst part1, argo)
 qed
 
 
@@ -76,56 +70,58 @@ theorem midpoint_approx_error:
       and a_le_b[arith]: "a \<le> b"
     shows "\<bar>(\<integral>x\<in>{a..b}. f x \<partial>lborel) - midpoint_rule f a b \<bar> \<le> k * ((b - a) ^ 3) / 24"
 proof -
-    let ?mid = "a + (b-a)/2"
-    have [arith]: "a \<le> ?mid" and [arith]: "?mid \<le> b"
+    define mid where "mid = a + (b-a)/2"
+    have a_le_mid[arith]: "a \<le> mid" and mid_le_b[arith]: "mid \<le> b" unfolding mid_def
       by (auto simp: algebra_simps divide_simps)
-    have lower: "(\<integral>x\<in>{a..?mid}. f x \<partial>lborel)
-        = (b-a)/2 * f ?mid - ((b-a)/2) * ((b-a)/2) / 2 * f' ?mid + (\<integral> x\<in>{a..?mid}. ((x - a) * (x - a) / 2 *f'' x) \<partial>lborel)"
-        by (subst double_integration_by_parts[of f f' a ?mid f'' k a],
-          auto simp: f''_bound intro: continuous_on_subset[OF cont_f'']
-          DERIV_subset[OF deriv2] DERIV_subset[OF deriv1])
+    have lower: "(\<integral>x\<in>{a..mid}. f x \<partial>lborel)
+        = (b-a)/2 * f mid - ((b-a)/2)^2 / 2 * f' mid + (\<integral> x\<in>{a..mid}. ((x - a)^2 / 2 *f'' x) \<partial>lborel)"
+        by (subst double_integration_by_parts[of f f' a mid f'' k a,
+          OF DERIV_subset[OF deriv1] DERIV_subset[OF deriv2] continuous_on_subset[OF cont_f'']],
+          unfold mid_def, auto simp: f''_bound algebra_simps divide_simps)
 
-    have upper: "(\<integral>x\<in>{?mid..b}. f x \<partial>lborel)
-        = (b-a)/2 * f ?mid + ((b-a)/2) * ((b-a)/2) / 2 * f' ?mid + (\<integral>x\<in>{?mid..b}. ((x - b) * (x - b) / 2 * f'' x)\<partial>lborel)"
-        by (subst double_integration_by_parts[of f f' ?mid b f'' k b],
-        auto simp: algebra_simps f''_bound intro!: continuous_on_subset[OF cont_f'']
-          DERIV_subset[OF deriv2] DERIV_subset[OF deriv1])
+    have upper: "(\<integral>x\<in>{mid..b}. f x \<partial>lborel)
+        = (b-a)/2 * f mid + ((b-a)/2)^2 / 2 * f' mid + (\<integral>x\<in>{mid..b}. ((x - b)^2 / 2 * f'' x)\<partial>lborel)"
+        by (subst double_integration_by_parts[of f f' mid b f'' k b,
+          OF DERIV_subset[OF deriv1] DERIV_subset[OF deriv2] continuous_on_subset[OF cont_f'']],
+          unfold mid_def, auto simp: algebra_simps divide_simps f''_bound, algebra)
     {
-        have "\<bar> \<integral>x\<in>{a..?mid}. ((x - a) * (x - a) / 2 * f'' x) \<partial>lborel\<bar> \<le> \<integral>x\<in>{a..?mid}. \<bar>(x - a) * (x - a) / 2 * f'' x\<bar> \<partial>lborel"
+        have "\<bar> \<integral>x\<in>{a..mid}. ((x - a)^2  / 2 * f'' x) \<partial>lborel\<bar> \<le> \<integral>x\<in>{a..mid}. \<bar>(x - a)^2 / 2 * f'' x\<bar> \<partial>lborel"
           by presburger
-        also have "... \<le> \<integral>x\<in>{a..?mid}. ((x - a) * (x - a) / 2 * k) \<partial>lborel"
+        also have "... \<le> \<integral>x\<in>{a..mid}. ((x - a)^2 / 2 * k) \<partial>lborel"
           apply (intro set_integral_mono) using continuous_on_subset[OF cont_f'']
           by (auto 1 0 intro!: continuous_intros borel_integrable_atLeastAtMost' cong: abs_mult
             simp: f''_bound mult_left_mono) (*proof takes ages with default auto parameters*)
-        also have "... = k/2 * (\<integral>x\<in>{a..?mid}. ((x - a)^2) \<partial>lborel)" by (simp add: power2_eq_square)
-        also have "... = k * ((b-a)/2)^3 / 6" unfolding set_lebesgue_integral_def apply (subst integral_FTC_Icc)
+        also have "... = k/2 * (\<integral>x\<in>{a..mid}. ((x - a)^2) \<partial>lborel)" by (simp add: power2_eq_square)
+        also have "... = k * ((b-a)/2)^3 / 6" unfolding set_lebesgue_integral_def mid_def apply (subst integral_FTC_Icc)
           using DERIV_mult[OF DERIV_const [of "1/3"] DERIV_power[OF DERIV_diff[OF DERIV_ident DERIV_const[of a]], of 3]]
             by (auto 2 0 intro!: continuous_intros  borel_integrable_atLeastAtMost'
               cong: has_real_derivative_iff_has_vector_derivative[symmetric])
-        finally have "\<bar>\<integral>x\<in>{a..?mid}. ((x - a) * (x - a) / 2 * f'' x) \<partial>lborel\<bar> \<le> k * ((b-a))^3/48" by (simp add: power_divide)
+        finally have "\<bar>\<integral>x\<in>{a..mid}. ((x - a)^2 / 2 * f'' x) \<partial>lborel\<bar> \<le> k * ((b-a))^3/48" by (simp add: power_divide)
     }
           note e1 = this
     {
-        have [cong]:"-((a + (b - a) / 2 - b) ^ 3) = (b - (a + (b - a) / 2)) ^ 3" and *: "b - ?mid = (b-a)/2"
-          by (auto simp: power3_eq_cube power2_eq_square right_diff_distrib') argo+
-        have "\<bar>\<integral>x\<in>{?mid..b}. ((x - b) * (x - b) / 2 * f'' x) \<partial>lborel\<bar> \<le> \<integral> x\<in>{?mid..b}. \<bar>(x - b) * (x - b) / 2 * f'' x\<bar> \<partial>lborel"
+        have [cong]:"-((mid - b) ^ 3) = (b - mid) ^ 3" and *: "b - mid = (b-a)/2"
+          unfolding mid_def by (auto simp: power3_eq_cube power2_eq_square right_diff_distrib') argo+
+        have "\<bar>\<integral>x\<in>{mid..b}. ((x - b)^2 / 2 * f'' x) \<partial>lborel\<bar> \<le> \<integral> x\<in>{mid..b}. \<bar>(x - b)^2 / 2 * f'' x\<bar> \<partial>lborel"
           by presburger
-        also have "... = \<integral> x\<in>{?mid..b}. ((x - b) * (x - b) / 2 * \<bar>f'' x\<bar>) \<partial>lborel"
+        also have "... = \<integral> x\<in>{mid..b}. ((x - b)^2 / 2 * \<bar>f'' x\<bar>) \<partial>lborel"
           by (auto cong: abs_mult)
-        also have "... \<le> \<integral> x\<in>{?mid..b}. ((x - b) * (x - b) / 2 * k) \<partial>lborel"
+        also have "... \<le> \<integral> x\<in>{mid..b}. ((x - b)^2 / 2 * k) \<partial>lborel"
           apply (intro set_integral_mono) using continuous_on_subset[OF cont_f'']
           by (auto 1 0 intro!: continuous_intros borel_integrable_atLeastAtMost' cong: abs_mult
             simp: f''_bound mult_left_mono)
-        also have "... = k/2 * (\<integral>x\<in>{?mid..b}. ((x - b)^2) \<partial>lborel)" by (simp add: mult.commute power2_eq_square)
-        also have "... = k/6 * (b-?mid)^3" unfolding set_lebesgue_integral_def apply (subst integral_FTC_Icc)
+        also have "... = k/2 * (\<integral>x\<in>{mid..b}. ((x - b)^2) \<partial>lborel)" by (simp add: mult.commute power2_eq_square)
+        also have "... = k/6 * (b-mid)^3" unfolding set_lebesgue_integral_def
+          apply (subst integral_FTC_Icc[OF mid_le_b])
           using DERIV_mult[OF DERIV_const [of "1/3"] DERIV_power[OF DERIV_diff[OF DERIV_ident DERIV_const[of b]], of 3]]
-            by (auto intro!: continuous_intros  borel_integrable_atLeastAtMost'
+            by (auto 2 0 intro!: continuous_intros  borel_integrable_atLeastAtMost'
               cong: has_real_derivative_iff_has_vector_derivative[symmetric])
-        finally have "\<bar>\<integral>x\<in>{?mid..b}. ((x - b) * (x - b) / 2 * f'' x)\<partial>lborel\<bar> \<le> k * (b-a)^3/48" unfolding * by (simp add: power_divide)
+        finally have "\<bar>\<integral>x\<in>{mid..b}. ((x - b)^2 / 2 * f'' x)\<partial>lborel\<bar> \<le> k * (b-a)^3/48" unfolding * by (simp add: power_divide)
     }
     with e1 show ?thesis unfolding midpoint_rule_def lower upper
-      real_set_integral_combine(1)[OF borel_integrable_atLeastAtMost'[OF DERIV_continuous_on[OF deriv1]] \<open>a \<le> ?mid\<close> \<open>?mid \<le> b\<close>, symmetric]
-      by argo
+      real_set_integral_combine(1)[OF borel_integrable_atLeastAtMost'[
+        OF DERIV_continuous_on[OF deriv1]] a_le_mid mid_le_b, symmetric]
+      by (unfold mid_def, argo)
 qed
 
 corollary midpoint_comp_approx_error:

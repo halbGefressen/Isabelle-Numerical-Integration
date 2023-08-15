@@ -13,6 +13,9 @@ definition simpson_rule_comp :: "(real \<Rightarrow> real) \<Rightarrow> real \<
   \<open>simpson_rule_comp f a b n = (let H = (b - a)/n
   in H/6 * (f a + f b + 2 * (\<Sum>k\<leftarrow>[1..<n]. f (a + k * H)) + 4 * (\<Sum>k\<leftarrow>[0..<n]. f (a + H/2 + k * H))))\<close>
 
+lemma simpson_rule_comp_single[cong]:"simpson_rule_comp f a b 1 = simpson_rule f a b"
+  unfolding simpson_rule_comp_def simpson_rule_def
+  by (simp add: algebra_simps divide_simps)
 
 lemma simpson_rule_sum_eq_simpson_rule_comp:
   assumes "n > 0"
@@ -20,7 +23,7 @@ lemma simpson_rule_sum_eq_simpson_rule_comp:
         = (let H = (b-a)/n in (\<Sum>k\<leftarrow>[0..<n]. simpson_rule f (a + k * H) (a + (Suc k) * H)))"
 proof (insert assms, induction n arbitrary: a b rule: nat_induct_non_zero)
   case 1 have [simp]:"a + (b-a) / 2 = (a+b)/2" by argo
-  then show ?case unfolding simpson_rule_comp_def simpson_rule_def by simp
+  show ?case unfolding simpson_rule_comp_def simpson_rule_def by simp
 next
   case (Suc n)
   let ?Hs = "(b-a)/(Suc n)"
@@ -76,12 +79,10 @@ next
            + f (a + ?Hs / 2 + (n * ?Hs))) + f b)" by argo
   finally have "simpson_rule_comp f a (b - ?Hs) n + simpson_rule f (a + real n * ?Hs) (a + (Suc n) * ?Hs)
     = simpson_rule_comp f a b (Suc n)" unfolding simpson_rule_comp_def using \<open>n > 0\<close> by simp
-  then show ?case by ((subst a c)+) simp
+  then show ?case by (subst a, subst c, simp)
 qed
 
 
-lemma [cong]:"simpson_rule_comp f a b 1 = simpson_rule f a b"
-  using simpson_rule_sum_eq_simpson_rule_comp[OF zero_less_Suc[of 0]] by simp
 
 
 

@@ -61,8 +61,7 @@ proof -
   define H where "H = h/(Suc n)"
   have [cong]:"(n * H) ^ m / (n ^ (m-1)) = n * H^m"
     by (subst of_nat_power, subst power_mult_distrib,
-      simp add: algebra_simps divide_simps,
-      simp add: power_eq_if)
+      simp add: algebra_simps divide_simps, simp add: power_eq_if)
   have "(n * H) ^ m / (n ^ (m-1)) + H ^ m = n * H^m + H^m" by simp
   also have "... = Suc n * H^m" by (simp add: distrib_left mult.commute)
   also have "... = Suc n * (Suc n)^(m-1) * H^m / (Suc n)^(m-1)" by (auto simp: algebra_simps divide_simps)
