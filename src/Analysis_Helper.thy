@@ -3,17 +3,17 @@ theory Analysis_Helper
 begin
 
 lemma real_set_integral_combine:
-  assumes \<open>set_integrable lborel {a..b} (f::real\<Rightarrow>real)\<close>
-      and \<open>(a::real) \<le> c\<close>
-      and \<open>c \<le> b\<close>
-  shows \<open>(\<integral>x\<in>{a..c}. f x \<partial>lborel) + (\<integral>x\<in>{c..b}. f x \<partial>lborel) = \<integral>x\<in>{a..b}. f x \<partial>lborel\<close>
-    and \<open>set_integrable lborel {a..c} f\<close>
-    and \<open>set_integrable lborel {c..b} f\<close>
+  assumes "set_integrable lborel {a..b} (f::real\<Rightarrow>real)"
+      and "(a::real) \<le> c"
+      and "c \<le> b"
+  shows "(\<integral>x\<in>{a..c}. f x \<partial>lborel) + (\<integral>x\<in>{c..b}. f x \<partial>lborel) = \<integral>x\<in>{a..b}. f x \<partial>lborel"
+    and "set_integrable lborel {a..c} f"
+    and "set_integrable lborel {c..b} f"
 proof goal_cases
-  show setintegr1: \<open>set_integrable lborel {a..c} f\<close>
-   and setintegr2: \<open>set_integrable lborel {c..b} f\<close>
+  show setintegr1: "set_integrable lborel {a..c} f"
+   and setintegr2: "set_integrable lborel {c..b} f"
     using assms set_integrable_subset by fastforce+
-  then show \<open>(\<integral>x\<in>{a..c}. f x \<partial>lborel) + (\<integral>x\<in>{c..b}. f x \<partial>lborel) = \<integral>x\<in>{a..b}. f x \<partial>lborel\<close>
+  then show "(\<integral>x\<in>{a..c}. f x \<partial>lborel) + (\<integral>x\<in>{c..b}. f x \<partial>lborel) = \<integral>x\<in>{a..b}. f x \<partial>lborel"
     using assms AE_lborel_singleton[of c] by (auto intro!: set_integral_Un_AE[symmetric]
       cong: ivl_disj_un_two_touch(4)[OF assms(2) assms(3), symmetric])
 qed
@@ -32,10 +32,10 @@ proof-
   have int: "\<integral>x\<in>{a..b}. (f x * g x + F x * g' x) \<partial>lborel = F b * g b - F a * g a"
     unfolding set_lebesgue_integral_def apply (intro integral_FTC_Icc[OF assms(1)])
         using DERIV_mult[OF assms(4) assms(5)] DERIV_continuous_on assms
-          by (auto 5 0 intro!: continuous_intros integral_FTC_Icc[OF assms(1)]
+          by (auto 5 0 intro!: continuous_intros
             cong: has_real_derivative_iff_has_vector_derivative simp: mult.commute)
-  have integr_left:  "set_integrable lborel {a..b} (λx. f x * g x)"
-   and integr_right: "set_integrable lborel {a..b} (λx. F x * g' x)"
+  have integr_left:  "set_integrable lborel {a..b} (\<lambda>x. f x * g x)"
+   and integr_right: "set_integrable lborel {a..b} (\<lambda>x. F x * g' x)"
     using cont_f cont_g DERIV_continuous_on
     by (auto intro!: borel_integrable_atLeastAtMost' continuous_intros)
   with set_integral_add(2)[OF this] int show ?thesis by linarith

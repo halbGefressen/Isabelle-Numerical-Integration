@@ -4,14 +4,14 @@ begin
 
 
 definition simpson_rule :: "(real \<Rightarrow> real) \<Rightarrow> real \<Rightarrow> real \<Rightarrow> real" where
-  \<open>simpson_rule f a b = (b - a) / 6 * (f a + 4 * f ((b + a)/2) + f b)\<close>
+  "simpson_rule f a b = (b - a) / 6 * (f a + 4 * f ((b + a)/2) + f b)"
 
 
 (*Alternate definition: For input n, there are 2n subintervals. This makes more sense because
  *the simpson rule is not defined for an uneven amount of subintervals.*)
 definition simpson_rule_comp :: "(real \<Rightarrow> real) \<Rightarrow> real \<Rightarrow> real \<Rightarrow> nat \<Rightarrow> real" where
-  \<open>simpson_rule_comp f a b n = (let H = (b - a)/n
-  in H/6 * (f a + f b + 2 * (\<Sum>k\<leftarrow>[1..<n]. f (a + k * H)) + 4 * (\<Sum>k\<leftarrow>[0..<n]. f (a + H/2 + k * H))))\<close>
+  "simpson_rule_comp f a b n = (let H = (b - a)/n
+  in H/6 * (f a + f b + 2 * (\<Sum>k\<leftarrow>[1..<n]. f (a + k * H)) + 4 * (\<Sum>k\<leftarrow>[0..<n]. f (a + H/2 + k * H))))"
 
 lemma simpson_rule_comp_single[cong]:"simpson_rule_comp f a b 1 = simpson_rule f a b"
   unfolding simpson_rule_comp_def simpson_rule_def
@@ -89,10 +89,10 @@ qed
 lemma poly1_derivs:
   fixes a b :: real
   assumes [arith]:"a \<le> b"
-  shows "\<And>x. ((λx. (x-a)^3 * (x - (a + 2*b)/3)) has_real_derivative (λx. (x-a)^2 * (4*x -2*a -2*b)) x) (at x within {a..b})"
-  and "\<And>x. ((λx. (x-a)^2 * (4*x -2*a -2*b)) has_real_derivative (λx. 4*(x-a)*(3*x-2*a-b)) x) (at x within {a..b})"
-  and "\<And>x. ((λx. 4*(x-a)*(3*x-2*a-b)) has_real_derivative (λx. 4*(6*x - 5*a - b)) x) (at x within {a..b})"
-  and "\<And>x. ((λx. 4*(6*x - 5*a - b)) has_real_derivative 24) (at x within {a..b})"
+  shows "\<And>x. ((\<lambda>x. (x-a)^3 * (x - (a + 2*b)/3)) has_real_derivative (\<lambda>x. (x-a)^2 * (4*x -2*a -2*b)) x) (at x within {a..b})"
+  and "\<And>x. ((\<lambda>x. (x-a)^2 * (4*x -2*a -2*b)) has_real_derivative (\<lambda>x. 4*(x-a)*(3*x-2*a-b)) x) (at x within {a..b})"
+  and "\<And>x. ((\<lambda>x. 4*(x-a)*(3*x-2*a-b)) has_real_derivative (\<lambda>x. 4*(6*x - 5*a - b)) x) (at x within {a..b})"
+  and "\<And>x. ((\<lambda>x. 4*(6*x - 5*a - b)) has_real_derivative 24) (at x within {a..b})"
 proof goal_cases
   case (1 x)
   have "((\<lambda>x. (x - a) ^ 3 * (x - (a + 2 * b) / 3)) has_real_derivative
@@ -104,7 +104,7 @@ proof goal_cases
   ultimately show ?case by simp
 next
   case (2 x)
-    have "((λx. (x-a)^2 * (4*x -2*a -2*b)) has_real_derivative 2 * (x-a) * (4*x - 2*a - 2*b) + 4*(x-a)^2) (at x within {a..b})"
+    have "((\<lambda>x. (x-a)^2 * (4*x -2*a -2*b)) has_real_derivative 2 * (x-a) * (4*x - 2*a - 2*b) + 4*(x-a)^2) (at x within {a..b})"
     using DERIV_mult[OF DERIV_power[OF DERIV_diff[OF DERIV_ident DERIV_const[of a]], of 2]
                       DERIV_diff[OF DERIV_diff[OF DERIV_mult[OF DERIV_const[of 4] DERIV_ident]
          DERIV_const[of "2*a"]] DERIV_const[of "2*b"]]] by simp
@@ -123,10 +123,10 @@ qed
 lemma poly2_derivs:
   fixes a b :: real
   assumes [arith]:"a \<le> b"
-  shows "\<And>x. ((λx. (x-b)^3 * (x - (2*a + b)/3)) has_real_derivative (λx. (x-b)^2 * (4*x -2*a -2*b)) x) (at x within {a..b})"
-  and "\<And>x. ((λx. (x-b)^2 * (4*x -2*a -2*b)) has_real_derivative (λx. 4*(x-b)*(3*x-a-2*b)) x) (at x within {a..b})"
-  and "\<And>x. ((λx. 4*(x-b)*(3*x-a-2*b)) has_real_derivative (λx. 4*(6*x - a - 5*b)) x) (at x within {a..b})"
-  and "⋀x. ((λx. 4*(6*x - a - 5*b)) has_real_derivative 24) (at x within {a..b})"
+  shows "\<And>x. ((\<lambda>x. (x-b)^3 * (x - (2*a + b)/3)) has_real_derivative (\<lambda>x. (x-b)^2 * (4*x -2*a -2*b)) x) (at x within {a..b})"
+  and "\<And>x. ((\<lambda>x. (x-b)^2 * (4*x -2*a -2*b)) has_real_derivative (\<lambda>x. 4*(x-b)*(3*x-a-2*b)) x) (at x within {a..b})"
+  and "\<And>x. ((\<lambda>x. 4*(x-b)*(3*x-a-2*b)) has_real_derivative (\<lambda>x. 4*(6*x - a - 5*b)) x) (at x within {a..b})"
+  and "\<And>x. ((\<lambda>x. 4*(6*x - a - 5*b)) has_real_derivative 24) (at x within {a..b})"
 proof goal_cases
   case (1 x)
   have "((\<lambda>x. (x - b) ^ 3 * (x - (2 * a + b) / 3)) has_real_derivative
@@ -138,7 +138,7 @@ proof goal_cases
   ultimately show ?case by simp
 next
   case (2 x)
-    have "((λx. (x-b)^2 * (4*x -2*a -2*b)) has_real_derivative 2 * (x-b) * (4*x - 2*a - 2*b) + 4*(x-b)^2) (at x within {a..b})"
+    have "((\<lambda>x. (x-b)^2 * (4*x -2*a -2*b)) has_real_derivative 2 * (x-b) * (4*x - 2*a - 2*b) + 4*(x-b)^2) (at x within {a..b})"
     using DERIV_mult[OF DERIV_power[OF DERIV_diff[OF DERIV_ident DERIV_const[of b]], of 2]
                       DERIV_diff[OF DERIV_diff[OF DERIV_mult[OF DERIV_const[of 4] DERIV_ident]
          DERIV_const[of "2*a"]] DERIV_const[of "2*b"]]] by simp
@@ -223,17 +223,17 @@ proof -
   {
     note partial = simpson_partial[of f f\<^sub>1 _ _ f\<^sub>2 f\<^sub>3 f\<^sub>4]
     note partial1 = partial[of a mid
-      "(λx. (x-a)^3 * (x - (a + 2*b)/3))"
-      "(λx. (x-a)^2 * (4*x -2*a -2*b))"
-      "(λx. 4*(x-a)*(3*x-2*a-b))"
-      "(λx. 4*(6*x - 5*a - b))"
-      "(λx. 24)"]
+      "(\<lambda>x. (x-a)^3 * (x - (a + 2*b)/3))"
+      "(\<lambda>x. (x-a)^2 * (4*x -2*a -2*b))"
+      "(\<lambda>x. 4*(x-a)*(3*x-2*a-b))"
+      "(\<lambda>x. 4*(6*x - 5*a - b))"
+      "(\<lambda>x. 24)"]
     note partial2 = partial[of mid b
-      "(λx. (x-b)^3 * (x - (2*a + b)/3))"
-      "(λx. (x-b)^2 * (4*x -2*a -2*b))"
-      "(λx. 4*(x-b)*(3*x-a-2*b))"
-      "(λx. 4*(6*x - a - 5*b))"
-      "(λx. 24)"]
+      "(\<lambda>x. (x-b)^3 * (x - (2*a + b)/3))"
+      "(\<lambda>x. (x-b)^2 * (4*x -2*a -2*b))"
+      "(\<lambda>x. 4*(x-b)*(3*x-a-2*b))"
+      "(\<lambda>x. 4*(6*x - a - 5*b))"
+      "(\<lambda>x. 24)"]
 
     have front: "LBINT x:{a..mid}. f\<^sub>4 x * ((x - a) ^ 3 * (x - (a + 2 * b) / 3)) =
   (mid - a) ^ 3 * (mid - (a + 2 * b) / 3) * f\<^sub>3 mid
@@ -280,9 +280,9 @@ proof -
   note partial_result = this
 
   { (*first error term*)
-      let ?minor = "(λx.  \<bar>f\<^sub>4 x\<bar> * \<bar>(x - a) ^ 3 * (x - (a + 2 * b) / 3)\<bar>)"
-      let ?between = "(λx. k * \<bar>(x - a) ^ 3 * (x - (a + 2 * b) / 3)\<bar>)"
-      let ?major = "(λx. k * ((x - a) ^ 3) * (((a + 2 * b) / 3) - x))"
+      let ?minor = "(\<lambda>x.  \<bar>f\<^sub>4 x\<bar> * \<bar>(x - a) ^ 3 * (x - (a + 2 * b) / 3)\<bar>)"
+      let ?between = "(\<lambda>x. k * \<bar>(x - a) ^ 3 * (x - (a + 2 * b) / 3)\<bar>)"
+      let ?major = "(\<lambda>x. k * ((x - a) ^ 3) * (((a + 2 * b) / 3) - x))"
       have integr_minor: "set_integrable lborel {a..mid} ?minor"
         using cont_f\<^sub>4 by (auto intro!: continuous_intros borel_integrable_atLeastAtMost'
           continuous_on_subset[OF _ subset1] cong: abs_mult)
@@ -335,9 +335,9 @@ proof -
   note error1 = this
 
   { (*second error term*)
-      let ?minor = "(λx.  \<bar>f\<^sub>4 x\<bar> * \<bar>(x - b) ^ 3 * (x - (2 * a + b) / 3)\<bar>)"
-      let ?between = "(λx. k * \<bar>(x - b) ^ 3 * (x - (2 * a + b) / 3)\<bar>)"
-      let ?major = "(λx. k * ((b-x) ^ 3) * (x - (2 * a + b) / 3))"
+      let ?minor = "(\<lambda>x.  \<bar>f\<^sub>4 x\<bar> * \<bar>(x - b) ^ 3 * (x - (2 * a + b) / 3)\<bar>)"
+      let ?between = "(\<lambda>x. k * \<bar>(x - b) ^ 3 * (x - (2 * a + b) / 3)\<bar>)"
+      let ?major = "(\<lambda>x. k * ((b-x) ^ 3) * (x - (2 * a + b) / 3))"
       have integr_minor: "set_integrable lborel {mid..b} ?minor"
         using cont_f\<^sub>4 by (auto intro!: continuous_intros borel_integrable_atLeastAtMost'
           continuous_on_subset[OF _ subset2] cong: abs_mult)

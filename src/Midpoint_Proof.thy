@@ -3,11 +3,11 @@ theory Midpoint_Proof
 begin
 
 definition midpoint_rule :: "(real \<Rightarrow> real) \<Rightarrow> real \<Rightarrow> real \<Rightarrow> real" where
-  \<open>midpoint_rule f a b = (b - a) * f ((a + b)/2)\<close>
+  "midpoint_rule f a b = (b - a) * f ((a + b)/2)"
 
 definition midpoint_rule_comp :: "(real \<Rightarrow> real) \<Rightarrow> real \<Rightarrow> real \<Rightarrow> nat \<Rightarrow> real" where
-  \<open>midpoint_rule_comp f a b n = (let h = (b - a)/n
-  in h * (\<Sum>k\<leftarrow>[0..<n]. f (a + (2 * k + 1) * h / 2)))\<close>
+  "midpoint_rule_comp f a b n = (let h = (b - a)/n
+  in h * (\<Sum>k\<leftarrow>[0..<n]. f (a + (2 * k + 1) * h / 2)))"
 
 lemma [cong]:"midpoint_rule_comp f a b 1 = midpoint_rule f a b"
   unfolding midpoint_rule_def midpoint_rule_comp_def
@@ -48,7 +48,7 @@ lemma double_integration_by_parts:
 proof - (*front part*)
       fix c::real
       have [cong]:"\<And>x. (4 * x - 4 * c) / 4 = (x-c)" by simp
-      have deriv'_F:"(\<And>x. ((λx. (x - c)^2 / 2) has_real_derivative (λx. x - c) x) (at x within {a..b}))"
+      have deriv'_F:"(\<And>x. ((\<lambda>x. (x - c)^2 / 2) has_real_derivative (\<lambda>x. x - c) x) (at x within {a..b}))"
         thm DERIV_divide[OF DERIV_power[OF DERIV_diff[OF DERIV_ident DERIV_const[of c]], of 2] DERIV_const[of 2]]
         using DERIV_divide[OF DERIV_power[OF DERIV_diff[OF DERIV_ident DERIV_const[of c]], of 2] DERIV_const[of 2]] by simp
       have part1: "(\<integral>x\<in>{a..b}. f x \<partial>lborel) = (b - c) * f b - (a - c) * f a - (\<integral>x\<in>{a..b}. ((x - c) * f' x) \<partial>lborel)"
@@ -66,7 +66,7 @@ theorem midpoint_approx_error:
   assumes deriv1: "\<And>x. (f has_real_derivative f' x) (at x within {a..b})"
       and deriv2: "\<And>x. (f' has_real_derivative f'' x) (at x within {a..b})"
       and cont_f'': "continuous_on {a..b} f''"
-      and f''_bound: "\<And>x. x \<in> {a..b} \<Longrightarrow> (k::real) \<ge> ¦f'' x¦"
+      and f''_bound: "\<And>x. x \<in> {a..b} \<Longrightarrow> (k::real) \<ge> \<bar>f'' x\<bar>"
       and a_le_b[arith]: "a \<le> b"
     shows "\<bar>(\<integral>x\<in>{a..b}. f x \<partial>lborel) - midpoint_rule f a b \<bar> \<le> k * ((b - a) ^ 3) / 24"
 proof -
@@ -173,14 +173,14 @@ qed (insert midpoint_approx_error, fastforce)
 corollary midpoint_exact_linear:
   fixes f :: "real \<Rightarrow> real"
   fixes a b m t :: "real"
-  assumes [simp, symmetric]:"f = (λx. m * x + t)"
+  assumes [simp, symmetric]:"f = (\<lambda>x. m * x + t)"
     and [arith]:"a \<le> b"
     and [arith]:"n > 0"
     shows "(\<integral>x\<in>{a..b}. f x \<partial>lborel) = midpoint_rule_comp f a b n"
 proof -
-  have *: "⋀x. (f has_real_derivative m) (at x within {a..b})" unfolding assms(1) using
+  have *: "\<And>x. (f has_real_derivative m) (at x within {a..b})" unfolding assms(1) using
    DERIV_add[OF DERIV_mult[OF DERIV_const[of m] DERIV_ident] DERIV_const[of t]] by simp
-  have **: "⋀x. ((λx. m) has_real_derivative 0) (at x within {a..b})" using DERIV_const by blast
+  have **: "\<And>x. ((\<lambda>x. m) has_real_derivative 0) (at x within {a..b})" using DERIV_const by blast
   have "\<bar>(\<integral>x\<in>{a..b}. f x \<partial>lborel) - midpoint_rule_comp f a b n\<bar> \<le> 0 * ((b - a) ^ 3) / (24*n\<^sup>2)"
      by (intro midpoint_comp_approx_error[OF * ** _ _ assms(2) assms(3)], auto)
   then show ?thesis by simp

@@ -1,37 +1,21 @@
 \documentclass[11pt,a4paper]{article}
 
+\usepackage[T1]{fontenc}
 \usepackage{isabelle,isabellesym}
-
 \usepackage{amsfonts, amsmath, amssymb}
-
-% this should be the last package used
-
 \usepackage{pdfsetup}
-
 \usepackage[shortcuts]{extdash}
 
-% urls in roman style, theory text in math-similar italics
-
 \urlstyle{rm}
-
 \isabellestyle{rm}
 
 \begin{document}
-
-\title{%TODO dein Titel
-  kekwtitel
-}
-
-\author{%TODO Authoren
-  Christian Zimmerer
-}
-
+\title{Various Integration Approximation Algorithms}
+\author{Christian Zimmerer}
 \maketitle
 
 \begin{abstract}
-kekwabstract
-%TODO dein Abstrakt
-
+Numerical integration algorithms are vital tools with many applications because they can quickly provide relatively accurate approximations to integrals with challenging analytical solutions. This thesis formally proves the error bounds of the composite midpoint rule and the composite Cavalieri-Simpson rule for numerical integration in Isabelle/HOL. Furthermore, it presents an executable implementation of both rules complemented by a numerical analysis, laying the foundation for extending the proof procedures described by Hölzl \cite{hoelzl09} to inequations containing integrals.
 \end{abstract}
 
 \newpage
@@ -43,8 +27,6 @@ kekwabstract
 \parindent 0pt\parskip 0.5ex
 
 \input{session}
-
-\nocite{hoelzl09}
 
 \bibliographystyle{abbrv}
 
