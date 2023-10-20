@@ -1,0 +1,14 @@
+chapter AFP
+
+session "Approximation_Integral" = "HOL-Analysis" +
+  options [timeout = 300]
+  sessions
+    "HOL-Decision_Procs"
+  theories
+    Analysis_Helper
+    Midpoint_Proof
+    Simpson_Proof
+    Numerical_Integration
+  document_files
+    "root.bib"
+    "root.tex"
