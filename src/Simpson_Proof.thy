@@ -2,20 +2,32 @@ theory Simpson_Proof
   imports Analysis_Helper
 begin
 
+section \<open>Proving the Cavalieri-Simpson rule error bound\<close>
 
+subsection \<open>Defining the Cavalieri-Simpson rule\<close>
+
+  text \<open>The definition of the simple rule is self-explanatory.\<close>
 definition simpson_rule :: "(real \<Rightarrow> real) \<Rightarrow> real \<Rightarrow> real \<Rightarrow> real" where
   "simpson_rule f a b = (b - a) / 6 * (f a + 4 * f ((b + a)/2) + f b)"
 
 
-(*Alternate definition: For input n, there are 2n subintervals. This makes more sense because
- *the simpson rule is not defined for an uneven amount of subintervals.*)
+text \<open>An alternative definition to most textbooks is used here. For input n,
+  there are 2n subintervals. This makes more sense because the simpson rule
+  is not defined for an uneven amount of subintervals.\<close>
+
 definition simpson_rule_comp :: "(real \<Rightarrow> real) \<Rightarrow> real \<Rightarrow> real \<Rightarrow> nat \<Rightarrow> real" where
   "simpson_rule_comp f a b n = (let H = (b - a)/n
   in H/6 * (f a + f b + 2 * (\<Sum>k\<leftarrow>[1..<n]. f (a + k * H)) + 4 * (\<Sum>k\<leftarrow>[0..<n]. f (a + H/2 + k * H))))"
 
+text \<open>Unsurprisingly, the simple rule is equivalent to the composite rule with a single interval.\<close>
 lemma simpson_rule_comp_single[cong]:"simpson_rule_comp f a b 1 = simpson_rule f a b"
   unfolding simpson_rule_comp_def simpson_rule_def
   by (simp add: algebra_simps divide_simps)
+
+subsection \<open>Preparing the proof\<close>
+
+text \<open>Manually adding up the intervals from the simple rule is equal to the composite rule.
+  This property is trivial, but Isabelle really doesn't like the mix of real and natural numbers.\<close>
 
 lemma simpson_rule_sum_eq_simpson_rule_comp:
   assumes "n > 0"
@@ -82,9 +94,7 @@ next
   then show ?case by (subst a, subst c, simp)
 qed
 
-
-
-
+text \<open>The polynomial from the paper is derived four times. The result has been extracted to avoid code duplication.\<close>
 
 lemma poly1_derivs:
   fixes a b :: real
@@ -150,10 +160,13 @@ next
             DERIV_diff[OF DERIV_diff[OF DERIV_mult[OF DERIV_const[of 3] DERIV_ident]
          DERIV_const[of "a"]] DERIV_const[of "2*b"]]] by (simp add: algebra_simps)
 next
-  case (4 x) then show ?case using DERIV_mult[OF DERIV_const[of 4] DERIV_diff
+  case (4 x) then show ?case
+    using DERIV_mult[OF DERIV_const[of 4] DERIV_diff
     [OF DERIV_diff[OF DERIV_mult[OF DERIV_const[of 6] DERIV_ident] DERIV_const[of a]] DERIV_const[of "5*b"]]] by auto
 qed
 
+
+text \<open>Again, the integration by parts is extracted for the sake of brevity.\<close>
 
 lemma simpson_partial:
   fixes f f\<^sub>1 f\<^sub>2 f\<^sub>3 f\<^sub>4 :: "real \<Rightarrow> real" (*alternative notation because too lazy for long superscripts*)
@@ -199,7 +212,7 @@ proof -
   finally show ?thesis .
 qed
 
-
+subsection \<open>The actual proof\<close>
 
 theorem simpson_approx_error:
   fixes f f\<^sub>1 f\<^sub>2 f\<^sub>3 f\<^sub>4 :: "real \<Rightarrow> real" (*alternative notation because too lazy for long superscripts*)
@@ -213,6 +226,7 @@ theorem simpson_approx_error:
     shows "\<bar>(\<integral>x\<in>{a..b}. f x \<partial>lborel) - simpson_rule f a b\<bar>
       \<le> k * (b-a)^5 / (90*2^5)"
 proof -
+  text \<open>Trivial properties about the midpoint are shown again.\<close>
   define mid where "mid = (a + b)/2"
   have a_le_mid[arith]:"a \<le> mid" and mid_le_b[arith]:"mid \<le> b" unfolding mid_def by auto
   have "mid - a = (b-a)/2" unfolding mid_def by simp
@@ -220,6 +234,8 @@ proof -
   then have subset1: "{a..mid} \<subseteq> {a..b}" and subset2: "{mid..b} \<subseteq> {a..b}" by auto
   have f\<^sub>4_bound1: "\<And>x. x \<in> {a..mid} \<Longrightarrow> (k::real) \<ge> abs(f\<^sub>4 x)" using f\<^sub>4_bound by simp
   have f\<^sub>4_bound2: "\<And>x. x \<in> {mid..b} \<Longrightarrow> (k::real) \<ge> abs(f\<^sub>4 x)" using f\<^sub>4_bound by simp
+
+  text \<open>Once again, the integral is split at the midpoint and the transformations are applied.\<close>
   {
     note partial = simpson_partial[of f f\<^sub>1 _ _ f\<^sub>2 f\<^sub>3 f\<^sub>4]
     note partial1 = partial[of a mid
@@ -235,7 +251,7 @@ proof -
       "(\<lambda>x. 4*(6*x - a - 5*b))"
       "(\<lambda>x. 24)"]
 
-    have front: "LBINT x:{a..mid}. f\<^sub>4 x * ((x - a) ^ 3 * (x - (a + 2 * b) / 3)) =
+    have front: "(LBINT x:{a..mid}. f\<^sub>4 x * ((x - a) ^ 3 * (x - (a + 2 * b) / 3))) =
   (mid - a) ^ 3 * (mid - (a + 2 * b) / 3) * f\<^sub>3 mid
     - ((mid - a)\<^sup>2 * (4 * mid - 2 * a - 2 * b) * f\<^sub>2 mid)
     + 4 * (mid - a) * (3 * mid - 2 * a - b) * f\<^sub>1 mid
@@ -243,7 +259,7 @@ proof -
     + 4 * (a - b) * f a +
   (LBINT x:{a..mid}. f x * 24)" using assms poly1_derivs
   by (subst partial1, auto 0 2 intro: continuous_on_subset[OF _ subset1] DERIV_subset[OF _ subset1])
-    have rear: "LBINT x:{mid..b}. f\<^sub>4 x * ((x - b) ^ 3 * (x - (2 * a + b) / 3)) =
+    have rear: "(LBINT x:{mid..b}. f\<^sub>4 x * ((x - b) ^ 3 * (x - (2 * a + b) / 3))) =
    - ((mid - b) ^ 3 * (mid - (2 * a + b) / 3) * f\<^sub>3 mid)
     + ((mid - b)\<^sup>2 * (4 * mid - 2 * a - 2 * b) * f\<^sub>2 mid)
     - 4 * (mid - b) * (3 * mid - a - 2 * b) * f\<^sub>1 mid
@@ -280,6 +296,8 @@ proof -
   note partial_result = this
 
   { (*first error term*)
+
+    text \<open>The proof is now mostly analogous to the midpoint rule proof.\<close>
       let ?minor = "(\<lambda>x.  \<bar>f\<^sub>4 x\<bar> * \<bar>(x - a) ^ 3 * (x - (a + 2 * b) / 3)\<bar>)"
       let ?between = "(\<lambda>x. k * \<bar>(x - a) ^ 3 * (x - (a + 2 * b) / 3)\<bar>)"
       let ?major = "(\<lambda>x. k * ((x - a) ^ 3) * (((a + 2 * b) / 3) - x))"
@@ -325,7 +343,7 @@ proof -
       also have "... = (LBINT x:{a..mid}. (x - a) ^ 3 * (2 * (b - a) / 3)) - (LBINT x:{a..mid}. (x - a)^4)"
         by (intro set_integral_diff(2), auto intro!: continuous_intros borel_integrable_atLeastAtMost')
       also have "... = ((b - a) / 6) * ((b-a)/2)^4 - 1/5 * ((b-a)/2)^5" by simp
-      also have "... = (b-a)^5/240" by (simp add: power_divide no_atp(126))
+      also have "... = (b-a)^5/240" by (simp add: power_divide) algebra
       finally have 2: "(LBINT x:{a..mid}. ((x-a) ^ 3) * (((a + 2 * b) / 3) - x)) = ..." .
 
       have "\<bar>LBINT x:{a..mid}. f\<^sub>4 x * ((x - a) ^ 3 * (x - (a + 2 * b) / 3))\<bar> \<le> k * (b-a)^5/240"
@@ -349,8 +367,8 @@ proof -
         unfolding mid_def by (auto simp: abs_mult minus_diff_eq[of _ b], algebra)
       ultimately have *: "\<And>x. x\<in>{mid..b} \<Longrightarrow> ?minor x \<le> ?major x" by auto
 
-      have "\<bar>LBINT x:{mid..b}. f\<^sub>4 x * ((x - b) ^ 3 * (x - (2 * a + b) / 3))\<bar>
-        \<le> LBINT x:{mid..b}. \<bar>f\<^sub>4 x * ((x - b) ^ 3 * (x - (2 * a + b) / 3))\<bar>"
+      have "\<bar>(LBINT x:{mid..b}. f\<^sub>4 x * ((x - b) ^ 3 * (x - (2 * a + b) / 3)))\<bar>
+        \<le> (LBINT x:{mid..b}. \<bar>f\<^sub>4 x * ((x - b) ^ 3 * (x - (2 * a + b) / 3))\<bar>)"
         by presburger
       also have "... = LBINT x:{mid..b}. \<bar>f\<^sub>4 x\<bar> * \<bar>((x - b) ^ 3 * (x - (2 * a + b) / 3))\<bar>" by (simp add: abs_mult)
       also have "... \<le> LBINT x:{mid..b}. k * ((b-x) ^ 3) * (x - (2 * a + b) / 3)"
@@ -378,19 +396,20 @@ proof -
       also have "... = (LBINT x:{mid..b}. (b - x) ^ 3 * (2 * (b - a) / 3)) - (LBINT x:{mid..b}. (b - x)^4)"
         by (intro set_integral_diff(2), auto intro!: continuous_intros borel_integrable_atLeastAtMost')
       also have "... = ((b - a) / 6) * ((b-a)/2)^4 - 1/5 * ((b-a)/2)^5" by simp
-      finally have 2: "(LBINT x:{mid..b}. ((b-x) ^ 3) * (x - (2 * a + b) / 3)) = (b-a)^5/240" by (simp add: power_divide no_atp(126))
+      finally have 2: "(LBINT x:{mid..b}. ((b-x) ^ 3) * (x - (2 * a + b) / 3)) = (b-a)^5/240" by (simp add: power_divide algebra_simps) algebra
 
       have "\<bar>LBINT x:{mid..b}. f\<^sub>4 x * ((x - b) ^ 3 * (x - (2 * a + b) / 3))\<bar> \<le> k * (b-a)^5/240"
         using 1 2 by simp
   }
   note error2 = this
+  text \<open>Adding both integrals and their transformations yields the result.\<close>
   show ?thesis
     using partial_result error1 error2 by (auto cong: power_divide)
 qed
 
 
 
-
+text \<open>Once again, a simple induction proves the error bound for the composite rule.\<close>
 corollary simpson_comp_approx_error:
   fixes f f\<^sub>1 f\<^sub>2 f\<^sub>3 f\<^sub>4 :: "real \<Rightarrow> real" (*alternative notation because too lazy for long superscripts*)
   assumes n_nonzero[arith] :"N > 0"

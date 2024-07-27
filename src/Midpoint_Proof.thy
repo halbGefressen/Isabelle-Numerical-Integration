@@ -2,6 +2,11 @@ theory Midpoint_Proof
   imports "Analysis_Helper"
 begin
 
+section \<open>Proving the midpoint rule error bound\<close>
+
+subsection \<open>Defining the midpoint rule\<close>
+text \<open>This definition should be self-explanatory.\<close>
+
 definition midpoint_rule :: "(real \<Rightarrow> real) \<Rightarrow> real \<Rightarrow> real \<Rightarrow> real" where
   "midpoint_rule f a b = (b - a) * f ((a + b)/2)"
 
@@ -9,10 +14,14 @@ definition midpoint_rule_comp :: "(real \<Rightarrow> real) \<Rightarrow> real \
   "midpoint_rule_comp f a b n = (let h = (b - a)/n
   in h * (\<Sum>k\<leftarrow>[0..<n]. f (a + (2 * k + 1) * h / 2)))"
 
+text \<open>Obviously, the composite rule with a single interval simplifies to the simple rule.\<close>
 lemma [cong]:"midpoint_rule_comp f a b 1 = midpoint_rule f a b"
   unfolding midpoint_rule_def midpoint_rule_comp_def
   by (auto simp: algebra_simps divide_simps)
 
+subsection \<open>Preparing the error bound proof\<close>
+
+text \<open>Appending a simple interval to a composite interval results in a bigger composite interval.\<close>
 lemma midpoint_IH:
   assumes "n > 0" shows
   "midpoint_rule_comp f a b (Suc n) =
@@ -33,6 +42,7 @@ proof -
 qed
 
 
+text \<open>Duplicate code for the proof has been extracted.\<close>
 
 lemma double_integration_by_parts:
   fixes f::"real \<Rightarrow> real"
@@ -60,6 +70,8 @@ proof - (*front part*)
           + (\<integral> x\<in>{a..b}. ((x - c)^2 / 2 *f'' x) \<partial>lborel)" by (subst part1, argo)
 qed
 
+subsection \<open>The real proof\<close>
+
 
 theorem midpoint_approx_error:
   fixes f::"real \<Rightarrow> real"
@@ -70,9 +82,12 @@ theorem midpoint_approx_error:
       and a_le_b[arith]: "a \<le> b"
     shows "\<bar>(\<integral>x\<in>{a..b}. f x \<partial>lborel) - midpoint_rule f a b \<bar> \<le> k * ((b - a) ^ 3) / 24"
 proof -
+  text \<open>As the midpoint of the interval is often used, some trivial properties are proven about it.\<close>
     define mid where "mid = a + (b-a)/2"
     have a_le_mid[arith]: "a \<le> mid" and mid_le_b[arith]: "mid \<le> b" unfolding mid_def
       by (auto simp: algebra_simps divide_simps)
+
+  text \<open>The integral is now split at the midpoint and partial integration is applied twice.\<close>
     have lower: "(\<integral>x\<in>{a..mid}. f x \<partial>lborel)
         = (b-a)/2 * f mid - ((b-a)/2)^2 / 2 * f' mid + (\<integral> x\<in>{a..mid}. ((x - a)^2 / 2 *f'' x) \<partial>lborel)"
         by (subst double_integration_by_parts[of f f' a mid f'' k a,
@@ -85,9 +100,10 @@ proof -
           OF DERIV_subset[OF deriv1] DERIV_subset[OF deriv2] continuous_on_subset[OF cont_f'']],
           unfold mid_def, auto simp: algebra_simps divide_simps f''_bound, algebra)
     {
-        have "\<bar> \<integral>x\<in>{a..mid}. ((x - a)^2  / 2 * f'' x) \<partial>lborel\<bar> \<le> \<integral>x\<in>{a..mid}. \<bar>(x - a)^2 / 2 * f'' x\<bar> \<partial>lborel"
+        text \<open>The bound for the second derivative can be inserted now. Afterwards, the integral is resolved.\<close>
+        have "\<bar> (\<integral>x\<in>{a..mid}. ((x - a)^2  / 2 * f'' x) \<partial>lborel)\<bar> \<le> (\<integral>x\<in>{a..mid}. \<bar>(x - a)^2 / 2 * f'' x\<bar> \<partial>lborel)"
           by presburger
-        also have "... \<le> \<integral>x\<in>{a..mid}. ((x - a)^2 / 2 * k) \<partial>lborel"
+        also have "... \<le> (\<integral>x\<in>{a..mid}. ((x - a)^2 / 2 * k) \<partial>lborel)"
           apply (intro set_integral_mono) using continuous_on_subset[OF cont_f'']
           by (auto 1 0 intro!: continuous_intros borel_integrable_atLeastAtMost' cong: abs_mult
             simp: f''_bound mult_left_mono) (*proof takes ages with default auto parameters*)
@@ -100,13 +116,14 @@ proof -
     }
           note e1 = this
     {
+        text \<open>The other interval is transformed accordingly.\<close>
         have [cong]:"-((mid - b) ^ 3) = (b - mid) ^ 3" and *: "b - mid = (b-a)/2"
           unfolding mid_def by (auto simp: power3_eq_cube power2_eq_square right_diff_distrib') argo+
-        have "\<bar>\<integral>x\<in>{mid..b}. ((x - b)^2 / 2 * f'' x) \<partial>lborel\<bar> \<le> \<integral> x\<in>{mid..b}. \<bar>(x - b)^2 / 2 * f'' x\<bar> \<partial>lborel"
+        have "\<bar>(\<integral>x\<in>{mid..b}. ((x - b)^2 / 2 * f'' x) \<partial>lborel)\<bar> \<le> (\<integral> x\<in>{mid..b}. \<bar>(x - b)^2 / 2 * f'' x\<bar> \<partial>lborel)"
           by presburger
-        also have "... = \<integral> x\<in>{mid..b}. ((x - b)^2 / 2 * \<bar>f'' x\<bar>) \<partial>lborel"
+        also have "... = (\<integral> x\<in>{mid..b}. ((x - b)^2 / 2 * \<bar>f'' x\<bar>) \<partial>lborel)"
           by (auto cong: abs_mult)
-        also have "... \<le> \<integral> x\<in>{mid..b}. ((x - b)^2 / 2 * k) \<partial>lborel"
+        also have "... \<le> (\<integral> x\<in>{mid..b}. ((x - b)^2 / 2 * k) \<partial>lborel)"
           apply (intro set_integral_mono) using continuous_on_subset[OF cont_f'']
           by (auto 1 0 intro!: continuous_intros borel_integrable_atLeastAtMost' cong: abs_mult
             simp: f''_bound mult_left_mono)
@@ -118,12 +135,15 @@ proof -
               cong: has_real_derivative_iff_has_vector_derivative[symmetric])
         finally have "\<bar>\<integral>x\<in>{mid..b}. ((x - b)^2 / 2 * f'' x)\<partial>lborel\<bar> \<le> k * (b-a)^3/48" unfolding * by (simp add: power_divide)
     }
+    text \<open>Adding both integrals yields the result.\<close>
     with e1 show ?thesis unfolding midpoint_rule_def lower upper
       real_set_integral_combine(1)[OF borel_integrable_atLeastAtMost'[
         OF DERIV_continuous_on[OF deriv1]] a_le_mid mid_le_b, symmetric]
       by (unfold mid_def, argo)
 qed
 
+
+text \<open>The composite rule error bound is easily proven by induction.\<close>
 corollary midpoint_comp_approx_error:
   fixes f::"real \<Rightarrow> real"
   assumes deriv1: "\<And>x. (f has_real_derivative f' x) (at x within {a..b})"
@@ -170,6 +190,7 @@ proof (insert n_nonzero, insert assms, induction N arbitrary: a b rule: nat_indu
 qed (insert midpoint_approx_error, fastforce)
 
 
+text \<open>It might be helpful to know that linear functions can be exactly calculated.\<close>
 corollary midpoint_exact_linear:
   fixes f :: "real \<Rightarrow> real"
   fixes a b m t :: "real"

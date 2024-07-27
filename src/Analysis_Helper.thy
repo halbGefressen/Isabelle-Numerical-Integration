@@ -2,18 +2,21 @@ theory Analysis_Helper
   imports "HOL-Analysis.Analysis"
 begin
 
+section \<open>Auxiliary lemmas\<close>
+text \<open>These are reformulations of existing lemmas, but for set integrals.\<close>
+
 lemma real_set_integral_combine:
   assumes "set_integrable lborel {a..b} (f::real\<Rightarrow>real)"
       and "(a::real) \<le> c"
       and "c \<le> b"
-  shows "(\<integral>x\<in>{a..c}. f x \<partial>lborel) + (\<integral>x\<in>{c..b}. f x \<partial>lborel) = \<integral>x\<in>{a..b}. f x \<partial>lborel"
+  shows "(\<integral>x\<in>{a..c}. f x \<partial>lborel) + (\<integral>x\<in>{c..b}. f x \<partial>lborel) = (\<integral>x\<in>{a..b}. f x \<partial>lborel)"
     and "set_integrable lborel {a..c} f"
     and "set_integrable lborel {c..b} f"
 proof goal_cases
   show setintegr1: "set_integrable lborel {a..c} f"
    and setintegr2: "set_integrable lborel {c..b} f"
     using assms set_integrable_subset by fastforce+
-  then show "(\<integral>x\<in>{a..c}. f x \<partial>lborel) + (\<integral>x\<in>{c..b}. f x \<partial>lborel) = \<integral>x\<in>{a..b}. f x \<partial>lborel"
+  then show "(\<integral>x\<in>{a..c}. f x \<partial>lborel) + (\<integral>x\<in>{c..b}. f x \<partial>lborel) = (\<integral>x\<in>{a..b}. f x \<partial>lborel)"
     using assms AE_lborel_singleton[of c] by (auto intro!: set_integral_Un_AE[symmetric]
       cong: ivl_disj_un_two_touch(4)[OF assms(2) assms(3), symmetric])
 qed
@@ -29,7 +32,7 @@ lemma set_integral_by_parts:
   shows "(\<integral>x\<in>{a..b}. (f x * g x) \<partial>lborel)
             =  F b * g b - F a * g a - (\<integral>x\<in>{a..b}. (F x * g' x) \<partial>lborel)"
 proof-
-  have int: "\<integral>x\<in>{a..b}. (f x * g x + F x * g' x) \<partial>lborel = F b * g b - F a * g a"
+  have int: "(\<integral>x\<in>{a..b}. (f x * g x + F x * g' x) \<partial>lborel) = F b * g b - F a * g a"
     unfolding set_lebesgue_integral_def apply (intro integral_FTC_Icc[OF assms(1)])
         using DERIV_mult[OF assms(4) assms(5)] DERIV_continuous_on assms
           by (auto 5 0 intro!: continuous_intros
@@ -44,13 +47,15 @@ qed
 lemma set_integral_abs_bound[arith]:
   fixes f::"real\<Rightarrow>real"
     and a b :: real
-    shows "\<bar>\<integral>x\<in>{a..b}. f x \<partial>lborel\<bar> \<le> \<integral>x\<in>{a..b}. \<bar>f x\<bar> \<partial>lborel"
+    shows "\<bar>(\<integral>x\<in>{a..b}. f x \<partial>lborel)\<bar> \<le> (\<integral>x\<in>{a..b}. \<bar>f x\<bar> \<partial>lborel)"
 unfolding set_lebesgue_integral_def by (simp cong: abs_mult_pos')
 
 (**
    (n * H) ^ m / (n ^ (m-1)) + H ^ m = (b - a) ^ m / (Suc n ^ (m-1))
  **
  **)
+
+text \<open>This lemma is needed in the induction proofs for the composite rules.\<close>
 
 lemma error_cong:
   fixes h :: real
